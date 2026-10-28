@@ -5,9 +5,9 @@ from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 import questionary
 """
-лучше переписать консольный интерфейс с помощью библиотеки import inquirer
+правильный код
 """
-# Настройка логирования (исправлено с %(smessage)s на %(message)s)
+# Налаштування логування
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class ImageScraper:
@@ -15,56 +15,55 @@ class ImageScraper:
         self.target_url = target_url
         self.save_folder = save_folder
         
-        # Автоматически создаем папку для картинок, если её нет
+        # Автоматично створюємо папку для картинок, якщо її немає
         if not os.path.exists(self.save_folder):
             os.makedirs(self.save_folder)
-            logging.info(f"Создана папка для сохранения: {os.path.abspath(self.save_folder)}")
+            logging.info(f"Створено папку для збереження: {os.path.abspath(self.save_folder)}")
 
     def scrape_and_download(self):
-        logging.info(f"Загружаем страницу: {self.target_url}")
+        logging.info(f"Завантажуємо сторінку: {self.target_url}")
         
         try:
-            # 1. Получаем HTML-код сайта
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"} # Представляемся браузером
+            # 1. Отримуємо HTML-код сайту
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"} # Представляємося браузером
             response = requests.get(self.target_url, headers=headers)
             
             if response.status_code != 200:
-                logging.error(f"Не удалось загрузить сайт. Код ответа: {response.status_code}")
+                logging.error(f"Не вдалося завантажити сайт. Код відповіді: {response.status_code}")
                 return
 
-            # 2. Передаем HTML в BeautifulSoup для анализа
+            # 2. Передаємо HTML в BeautifulSoup для аналізу
             soup = BeautifulSoup(response.text, 'html.parser')
             
-            # Находим ВСЕ теги <img> на странице
+            # Знаходимо ВСІ теги <img> на сторінці
             img_tags = soup.find_all('img')
-            logging.info(f"Найдено тегов <img> на странице: {len(img_tags)}")
+            logging.info(f"Знайдено тегів <img> на сторінці: {len(img_tags)}")
 
-            # 3. Перебираем найденные картинки
+            # 3. Перебираємо знайдені картинки
             for index, img in enumerate(img_tags):
-                # Берем ссылку из атрибута 'src' (источник картинки)
+                # Беремо посилання з атрибута 'src' (джерело картинки)
                 img_url = img.get('src')
                 
                 if not img_url:
-                    continue  # Если у тега нет src, пропускаем его
+                    continue  # Якщо у тега немає src, пропускаємо його
 
-                # Превращаем относительные ссылки (например, '/images/logo.png') 
-                # в полные (например, 'https://site.com')
+                # Перетворюємо відносні посилання у повні
                 img_url = urljoin(self.target_url, img_url)
                 
-                # Извлекаем оригинальное имя файла из ссылки (или придумываем свое, если имя странное)
+                # Витягуємо оригінальне ім'я файлу з посилання
                 parsed_url = urlparse(img_url)
                 filename = os.path.basename(parsed_url.path)
                 
-                # Если имя файла пустое или слишком длинное, даем ему порядковый номер
+                # Якщо ім'я файлу порожнє або занадто довге, даємо йому порядковий номер
                 if not filename or len(filename) > 50:
                     filename = f"image_{index}.png"
                 
-                # Формируем полный путь для сохранения файла внутри нашей папки
+                # Формуємо повний шлях для збереження файлу всередині нашої папки
                 file_path = os.path.join(self.save_folder, filename)
 
-                # 4. Скачиваем саму картинку
+                # 4. Скачуємо саму картинку
                 try:
-                    logging.info(f"Скачиваем: {img_url}")
+                    logging.info(f"Завантажуємо: {img_url}")
                     img_response = requests.get(img_url, stream=True, headers=headers)
                     
                     if img_response.status_code == 200:
@@ -72,50 +71,54 @@ class ImageScraper:
                             for chunk in img_response.iter_content(chunk_size=1024):
                                 if chunk:
                                     file.write(chunk)
-                        print(f"-> Успешно сохранено: {file_path}")
+                        print(f"-> Успішно збережено: {file_path}")
                     else:
-                        logging.warning(f"-> Ошибка скачивания файла. Статус: {img_response.status_code}")
+                        logging.warning(f"-> Помилка завантаження файлу. Статус: {img_response.status_code}")
                         
                 except Exception as e:
-                    logging.error(f"-> Не удалось скачать картинку {img_url}: {e}")
+                    logging.error(f"-> Не вдалося завантажити картинку {img_url}: {e}")
 
         except requests.exceptions.RequestException as e:
-            logging.error(f"Ошибка подключения к сайту: {e}")
+            logging.error(f"Помилка підключення до сайту: {e}")
 
 
 def main():
-    print("=== Интерактивный запуск парсера картинок ===\n")
+    print("=== Інтерактивний запуск парсера картинок ===\n")
 
-    # 1. Запрашиваем URL-адрес с базовой валидацией
-    url_to_parse = questionary.text(
-        "Введите URL сайта для парсинга:",
+    # 1. Запитуємо URL з валідацією через лямбду
+    url = questionary.text(
+        "Введіть URL сайту для парсингу:",
         default="https://python.org",
-        validate=lambda text: True if text.startswith("http://") or text.startswith("https://") else "Ссылка должна начинаться с http:// или https://"
+        validate=lambda text: True if text.startswith(("http://", "https://")) else "Посилання має починатися з http:// або https://"
     ).ask()
 
-    # Если пользователь прервал ввод (Ctrl+C), выходим
-    if not url_to_parse:
+    # Якщо користувач натиснув Ctrl+C або закрив термінал, url буде None
+    if url is None:
+        print("\n❌ Введення скасовано.")
         return
 
-    # 2. Запрашиваем имя папки для сохранения файлов
-    folder_name = questionary.text(
-        "Введите имя папки для сохранения картинок:",
+    # 2. Запитуємо назву папки
+    folder = questionary.text(
+        "Введіть ім'я папки для збереження картинок:",
         default="parsed_images",
-        validate=lambda text: True if len(text.strip()) > 0 else "Имя папки не должно быть пустым"
+        validate=lambda text: True if len(text.strip()) > 0 else "Ім'я папки не повинно бути порожнім"
     ).ask()
 
-    if not folder_name:
+    if folder is None:
+        print("\n❌ Введення скасовано.")
         return
 
-    # 3. Запрашиваем финальное подтверждение (Да/Нет)
-    confirm = questionary.confirm(f"Запустить скачивание картинок с {url_to_parse} в папку '{folder_name}'?").ask()
+    # 3. Динамічне підтвердження запуску (змінні легко підставляються у f-рядок)
+    confirm = questionary.confirm(
+        f"Запустити скачування картинок з {url} в папку '{folder}'?",
+        default=True
+    ).ask()
 
     if confirm:
-        # Создаем объект нашего парсера и запускаем с параметрами пользователя
-        scraper = ImageScraper(url_to_parse, save_folder=folder_name)
+        scraper = ImageScraper(url, save_folder=folder)
         scraper.scrape_and_download()
     else:
-        print("❌ Работа парсера отменена пользователем.")
+        print("❌ Робота парсера скасована користувачем.")
 
 if __name__ == "__main__":
     main()
