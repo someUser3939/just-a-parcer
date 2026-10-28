@@ -3,9 +3,10 @@ import logging
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
+import questionary
 
-# Настройка логирования
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(smessage)s')
+# Настройка логирования (исправлено с %(smessage)s на %(message)s)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class ImageScraper:
     def __init__(self, target_url: str, save_folder: str = "downloaded_images"):
@@ -79,19 +80,41 @@ class ImageScraper:
         except requests.exceptions.RequestException as e:
             logging.error(f"Ошибка подключения к сайту: {e}")
 
-# --- ПРИМЕР ЗАПУСКА ---
+
+def main():
+    print("=== Интерактивный запуск парсера картинок ===\n")
+
+    # 1. Запрашиваем URL-адрес с базовой валидацией
+    url_to_parse = questionary.text(
+        "Введите URL сайта для парсинга:",
+        default="https://python.org",
+        validate=lambda text: True if text.startswith("http://") or text.startswith("https://") else "Ссылка должна начинаться с http:// или https://"
+    ).ask()
+
+    # Если пользователь прервал ввод (Ctrl+C), выходим
+    if not url_to_parse:
+        return
+
+    # 2. Запрашиваем имя папки для сохранения файлов
+    folder_name = questionary.text(
+        "Введите имя папки для сохранения картинок:",
+        default="parsed_images",
+        validate=lambda text: True if len(text.strip()) > 0 else "Имя папки не должно быть пустым"
+    ).ask()
+
+    if not folder_name:
+        return
+
+    # 3. Запрашиваем финальное подтверждение (Да/Нет)
+    confirm = questionary.confirm(f"Запустить скачивание картинок с {url_to_parse} в папку '{folder_name}'?").ask()
+
+    if confirm:
+        # Создаем объект нашего парсера и запускаем с параметрами пользователя
+        scraper = ImageScraper(url_to_parse, save_folder=folder_name)
+        scraper.scrape_and_download()
+    else:
+        print("❌ Работа парсера отменена пользователем.")
+
 if __name__ == "__main__":
-    # Вставь сюда адрес любого сайта, с которого хочешь собрать картинки
-    url_to_parse = "https://python.org" 
-    
-    # Создаем объект нашего парсера и запускаем
-    scraper = ImageScraper(url_to_parse, save_folder="python_site_images")
-    scraper.scrape_and_download()
-
-"""
-дописать клиент в терминале
-
-
-"""
-
+    main()
 
