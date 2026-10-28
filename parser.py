@@ -88,6 +88,10 @@ if __name__ == "__main__":
     scraper = ImageScraper(url_to_parse, save_folder="python_site_images")
     scraper.scrape_and_download()
 
+"""
+дописать клиент в терминале
 
+
+"""
 
 
