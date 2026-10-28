@@ -4,7 +4,9 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 import questionary
-
+"""
+лучше переписать консольный интерфейс с помощью библиотеки import inquirer
+"""
 # Настройка логирования (исправлено с %(smessage)s на %(message)s)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
